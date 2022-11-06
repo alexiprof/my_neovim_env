@@ -9,9 +9,11 @@ call plug#begin(stdpath('data').'/plugged')
 	Plug 'L3MON4D3/LuaSnip'
 	Plug 'morhetz/gruvbox'
 	Plug 'hsanson/vim-openapi'
+	# Plug 'http://github.yandex-team.ru/segoon/uservices-vim'
 	Plug 'alfredodeza/pytest.vim'
 	Plug 'derekwyatt/vim-fswitch'
 	Plug 'dense-analysis/ale'
+	# Plug 'http://github.yandex-team.ru/segoon/openapi-navigation/'
 	Plug 'majutsushi/tagbar'
 	Plug 'jlanzarotta/bufexplorer'
 	Plug 'scrooloose/nerdtree'
@@ -134,7 +136,7 @@ lua << EOF
 
 -- Add additional capabilities supported by nvim-cmp
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
+capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
 local nvim_lsp = require('lspconfig')
 local on_attach = function(client, bufnr)
@@ -204,9 +206,24 @@ nvim_lsp.cmake.setup {
 	capabilities = capabilities,
 }
 
+-- pyright
 nvim_lsp.pyright.setup = {
 	on_attach = on_attach,
     capabilities = capabilities,
+}
+
+-- pylsp
+nvim_lsp.pylsp.setup{
+  settings = {
+    pylsp = {
+      plugins = {
+        pycodestyle = {
+          ignore = {'W391'},
+          maxLineLength = 100
+        }
+      }
+    }
+  }
 }
 
 -- luasnip setup
