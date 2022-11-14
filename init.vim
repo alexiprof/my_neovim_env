@@ -9,14 +9,18 @@ call plug#begin(stdpath('data').'/plugged')
 	Plug 'L3MON4D3/LuaSnip'
 	Plug 'morhetz/gruvbox'
 	Plug 'hsanson/vim-openapi'
-	# Plug 'http://github.yandex-team.ru/segoon/uservices-vim'
+	" Plug 'http://github.yandex-team.ru/segoon/uservices-vim'
 	Plug 'alfredodeza/pytest.vim'
 	Plug 'derekwyatt/vim-fswitch'
 	Plug 'dense-analysis/ale'
-	# Plug 'http://github.yandex-team.ru/segoon/openapi-navigation/'
+	" Plug 'http://github.yandex-team.ru/segoon/openapi-navigation/'
 	Plug 'majutsushi/tagbar'
 	Plug 'jlanzarotta/bufexplorer'
 	Plug 'scrooloose/nerdtree'
+	Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+	Plug 'nvim-lualine/lualine.nvim'
+    "If you want to have icons in your statusline choose one of these
+	Plug 'kyazdani42/nvim-web-devicons'
 call plug#end()
 
 let mapleader=","
@@ -24,6 +28,7 @@ let mapleader=","
 
 set nocompatible
 
+"colorscheme tokyonight-night
 colorscheme gruvbox
 
 
@@ -131,8 +136,9 @@ let g:netrw_banner = 0
 "let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
 ""set completeopt=menuone,noinsert,noselect
 
-
 lua << EOF
+
+require('lualine').setup()
 
 -- Add additional capabilities supported by nvim-cmp
 local capabilities = vim.lsp.protocol.make_client_capabilities()
