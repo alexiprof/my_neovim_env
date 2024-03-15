@@ -3,24 +3,42 @@ call plug#begin(stdpath('data').'/plugged')
     Plug 'vimwiki/vimwiki'
     Plug 'mhinz/vim-rfc'
     Plug 'neovim/nvim-lspconfig'
-	Plug 'hrsh7th/nvim-cmp'
-	Plug 'hrsh7th/cmp-nvim-lsp'
+    Plug 'hrsh7th/nvim-cmp'
+    Plug 'hrsh7th/cmp-nvim-lsp'
+    " gg
+	Plug 'hrsh7th/cmp-buffer'
+    Plug 'hrsh7th/cmp-path'
+    "
 	Plug 'saadparwaiz1/cmp_luasnip'
-	Plug 'L3MON4D3/LuaSnip'
-	Plug 'morhetz/gruvbox'
-	Plug 'hsanson/vim-openapi'
-	" Plug 'http://github.yandex-team.ru/segoon/uservices-vim'
-	Plug 'alfredodeza/pytest.vim'
-	Plug 'derekwyatt/vim-fswitch'
-	Plug 'dense-analysis/ale'
-	" Plug 'http://github.yandex-team.ru/segoon/openapi-navigation/'
-	Plug 'majutsushi/tagbar'
-	Plug 'jlanzarotta/bufexplorer'
-	Plug 'scrooloose/nerdtree'
-	Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
-	Plug 'nvim-lualine/lualine.nvim'
+    Plug 'L3MON4D3/LuaSnip'
+    Plug 'morhetz/gruvbox'
+    Plug 'hsanson/vim-openapi'
+    " Plug 'http://github.yandex-team.ru/segoon/uservices-vim'
+    Plug 'alfredodeza/pytest.vim'
+    Plug 'derekwyatt/vim-fswitch'
+    Plug 'dense-analysis/ale'
+    " Plug 'http://github.yandex-team.ru/segoon/openapi-navigation/'
+    Plug 'majutsushi/tagbar'
+    Plug 'jlanzarotta/bufexplorer'
+    Plug 'scrooloose/nerdtree'
+    Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+    Plug 'nvim-lualine/lualine.nvim'
     "If you want to have icons in your statusline choose one of these
-	Plug 'kyazdani42/nvim-web-devicons'
+    Plug 'kyazdani42/nvim-web-devicons'
+    " Rust
+    Plug 'rust-lang/rust.vim'
+    Plug 'jackguo380/vim-lsp-cxx-highlight'
+    Plug 'simrat39/rust-tools.nvim'
+
+    "-- Debugging
+    Plug 'nvim-lua/plenary.nvim'
+    Plug 'mfussenegger/nvim-dap'
+
+    Plug 'ctrlpvim/ctrlp.vim'
+
+	"-- go
+	Plug 'olexsmir/gopher.nvim'
+	Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 call plug#end()
 
 let mapleader=","
@@ -33,6 +51,7 @@ colorscheme gruvbox
 
 
 let g:gruvbox_hls_cursor = 'bg0_h'
+let NERDTreeShowHidden = 1
 
 filetype plugin indent on   " autodetect file type
 syntax on                   " syntax highlighting
@@ -100,12 +119,15 @@ tnoremap <Esc> <C-\><C-n>
 
 " Set C++ editing options
 autocmd FileType cpp setlocal shiftwidth=0 tabstop=2 expandtab
+"autocmd BufWritePre *.go lua vim.lsp.buf.formatting()
+autocmd BufWritePre *.go lua goimports(1000)
+
 
 
 "let g:vimwiki_list = [
 "\ {
-"\	'path': '$HOME/Yandex.Disk.localized/vimwiki',
-"\	'path_html': '$HOME/Yandex.Disk.localized/vimwiki/wiki_html',
+"\    'path': '$HOME/Yandex.Disk.localized/vimwiki',
+"\    'path_html': '$HOME/Yandex.Disk.localized/vimwiki/wiki_html',
 "\ }
 "\ ]
 
@@ -120,6 +142,8 @@ vnoremap <C-c> :w !pbcopy<CR><CR>
 noremap <C-v> :r !pbpaste<CR><CR>
 
 noremap <C-t> :Vexplore<CR><CR>
+
+nnoremap <C-t> :NERDTreeToggle<CR>
 
 let g:netrw_banner = 0
 "let g:netrw_liststyle = 3
@@ -138,13 +162,31 @@ let g:netrw_banner = 0
 
 lua << EOF
 
+local rt = require("rust-tools")
+
 require('lualine').setup()
+
+rt.setup({
+  server = {
+    on_attach = function(_, bufnr)
+      -- Hover actions
+      vim.keymap.set("n", "<C-space>", rt.hover_actions.hover_actions, { buffer = bufnr })
+      -- Code action groups
+      vim.keymap.set("n", "<Leader>a", rt.code_action_group.code_action_group, { buffer = bufnr })
+    end,
+  },
+})
 
 -- Add additional capabilities supported by nvim-cmp
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = require('cmp_nvim_lsp').default_capabilities(capabilities)
 
 local nvim_lsp = require('lspconfig')
+
+local util = require('lspconfig/util')
+
+-- local gopher = require('plugins/gopher')
+
 local on_attach = function(client, bufnr)
   local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
   local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
@@ -198,23 +240,31 @@ end
 ---  nvim_lsp[lsp].setup { on_attach = on_attach }
 --end
 
+local on_attach_rust = function(client)
+   require'completion'.on_attach(client)
+end
+
+nvim_lsp.rust_analyzer.setup({
+   on_attach=on_attach,
+})
+
 -- clang setup
 nvim_lsp.clangd.setup {
     cmd = { "clangd", "--background-index", "--clang-tidy", "-j=4" },
     on_attach = on_attach,
-	capabilities = capabilities,
+    capabilities = capabilities,
 }
 
 -- cmake-language-server
 nvim_lsp.cmake.setup {
     on_attach = on_attach,
     cmd = { "cmake-language-server" },
-	capabilities = capabilities,
+    capabilities = capabilities,
 }
 
 -- pyright
 nvim_lsp.pyright.setup = {
-	on_attach = on_attach,
+    on_attach = on_attach,
     capabilities = capabilities,
 }
 
@@ -231,6 +281,70 @@ nvim_lsp.pylsp.setup{
     }
   }
 }
+
+-- golang
+nvim_lsp.gopls.setup{
+	cmd = {'gopls'},
+	-- for postfix snippets and analyzers
+	capabilities = capabilities,
+	    settings = {
+	      gopls = {
+		      experimentalPostfixCompletions = true,
+		      analyses = {
+		        unusedparams = true,
+		        shadow = true,
+		     },
+		     staticcheck = true,
+		    },
+	    },
+	on_attach = on_attach,
+}
+
+  function goimports(timeoutms)
+    local context = { source = { organizeImports = true } }
+    vim.validate { context = { context, "t", true } }
+
+    local params = vim.lsp.util.make_range_params()
+    params.context = context
+
+    -- See the implementation of the textDocument/codeAction callback
+    -- (lua/vim/lsp/handler.lua) for how to do this properly.
+    local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, timeout_ms)
+    if not result or next(result) == nil then return end
+    local actions = result[1].result
+    if not actions then return end
+    local action = actions[1]
+
+    -- textDocument/codeAction can return either Command[] or CodeAction[]. If it
+    -- is a CodeAction, it can have either an edit, a command or both. Edits
+    -- should be executed first.
+    if action.edit or type(action.command) == "table" then
+      if action.edit then
+        vim.lsp.util.apply_workspace_edit(action.edit)
+      end
+      if type(action.command) == "table" then
+        vim.lsp.buf.execute_command(action.command)
+      end
+    else
+      vim.lsp.buf.execute_command(action)
+    end
+  end
+
+--nvim_lsp.gopls.setup = {
+--  on_attach = on_attach,
+--  cmd = { 'gopls', 'serve' },
+--  filetypes = { 'go', 'go.mod' },
+--  root_dir = util.root_pattern('go.work', 'go.mod', '.git'),
+--  settings = {
+--    gopls = {
+--      analyses = {
+--        unusedparams = true,
+--        shadow = true,
+--      },
+--      staticcheck = true,
+--    }
+--  }
+--}
 
 -- luasnip setup
 local luasnip = require 'luasnip'
