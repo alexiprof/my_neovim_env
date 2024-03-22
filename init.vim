@@ -39,6 +39,8 @@ call plug#begin(stdpath('data').'/plugged')
 	"-- go
 	Plug 'olexsmir/gopher.nvim'
 	Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+
+	Plug 'numToStr/Comment.nvim'
 call plug#end()
 
 let mapleader=","
@@ -165,6 +167,8 @@ lua << EOF
 local rt = require("rust-tools")
 
 require('lualine').setup()
+require('Comment').setup()
+
 
 rt.setup({
   server = {
